@@ -1,0 +1,21 @@
+create extension if not exists pgcrypto;
+create table if not exists public.families(id uuid primary key default gen_random_uuid(),name text not null,passcode_hash text not null,created_at timestamptz not null default now());
+create table if not exists public.family_messages(id uuid primary key default gen_random_uuid(),family_id uuid not null references public.families(id) on delete cascade,author text not null check(char_length(author) between 1 and 20),body text not null check(char_length(body) between 1 and 500),created_at timestamptz not null default now());
+create index if not exists family_messages_family_created_idx on public.family_messages(family_id,created_at desc);
+alter table public.families enable row level security;
+alter table public.family_messages enable row level security;
+revoke all on public.families,public.family_messages from anon,authenticated;
+create or replace function public.family_list_messages(p_family_code text) returns table(id uuid,author text,body text,created_at timestamptz) language sql security definer set search_path='' stable as $$ select m.id,m.author,m.body,m.created_at from public.family_messages m join public.families f on f.id=m.family_id where f.passcode_hash=extensions.crypt(p_family_code,f.passcode_hash) order by m.created_at desc limit 200 $$;
+create or replace function public.family_add_message(p_family_code text,p_author text,p_body text) returns uuid language plpgsql security definer set search_path='' as $$ declare v_family_id uuid;v_message_id uuid;begin select id into v_family_id from public.families where passcode_hash=extensions.crypt(p_family_code,passcode_hash) limit 1;if v_family_id is null then raise exception 'invalid family code';end if;insert into public.family_messages(family_id,author,body) values(v_family_id,trim(p_author),trim(p_body)) returning id into v_message_id;return v_message_id;end;$$;
+create or replace function public.family_delete_message(p_family_code text,p_message_id uuid) returns void language plpgsql security definer set search_path='' as $$ begin delete from public.family_messages m using public.families f where m.id=p_message_id and m.family_id=f.id and f.passcode_hash=extensions.crypt(p_family_code,f.passcode_hash);end;$$;
+revoke execute on function public.family_list_messages(text) from public;
+revoke execute on function public.family_add_message(text,text,text) from public;
+revoke execute on function public.family_delete_message(text,uuid) from public;
+grant execute on function public.family_list_messages(text) to anon,authenticated;
+grant execute on function public.family_add_message(text,text,text) to anon,authenticated;
+grant execute on function public.family_delete_message(text,uuid) to anon,authenticated;
+create or replace function public.family_check_code(p_family_code text) returns boolean language sql security definer set search_path='' stable as $$ select exists(select 1 from public.families where passcode_hash=extensions.crypt(p_family_code,passcode_hash)) $$;
+revoke execute on function public.family_check_code(text) from public;
+grant execute on function public.family_check_code(text) to anon,authenticated;
+-- 執行前，請把下一行的「請換成至少8碼家庭密碼」改成只有家人知道的密碼。
+insert into public.families(name,passcode_hash) select '咱兜',extensions.crypt('XXXXXXXXXX...',extensions.gen_salt('bf')) where not exists(select 1 from public.families);

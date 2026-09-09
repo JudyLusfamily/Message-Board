@@ -1,28 +1,23 @@
 # 咱兜的留言簿
 
-這是可直接發佈到網際網路的純靜態網站，不需要資料庫或建置指令。網站支援手機安裝與離線開啟；留言仍只儲存在該裝置的瀏覽器中，不會傳送至伺服器。
+這是全家共享的語音留言板，前端使用 Supabase publishable key，資料表不允許瀏覽器直接存取；所有讀寫均經過家庭密碼驗證函式。
 
-## 最簡單的發佈方式：Netlify Drop
+## 第一次設定資料庫（必要）
 
-1. 前往 <https://app.netlify.com/drop>。
-2. 將整個 `family-message-board` 資料夾拖進頁面。
-3. 等待完成後，Netlify 會提供一個可分享的 HTTPS 網址。
-4. 用手機開啟該網址，允許麥克風權限即可使用語音輸入。
+1. 登入 Supabase，開啟目前專案。
+2. 左側選擇 **SQL Editor**，再按 **New query**。
+3. 在本機開啟 `supabase-setup.sql`，複製全部內容貼進 SQL Editor。
+4. 將最後一行的 `請換成至少8碼家庭密碼` 換成自訂密碼。建議至少 10 碼並混合數字與文字。
+5. 按 **Run**；畫面顯示成功後資料庫即完成。
 
-## 其他支援平台
+家庭密碼只會以雜湊形式儲存在資料庫。請把密碼告訴家人，但不要把修改後、含有密碼的 SQL 檔一起公開上傳。
 
-- **GitHub Pages**：把這個資料夾放進 GitHub repository，於 Settings → Pages 選擇從分支發佈。
-- **Vercel**：匯入 repository，或使用 Vercel CLI 在此資料夾執行 `vercel`。
-- **Cloudflare Pages**：匯入 repository，建置指令留白，輸出目錄填入 `.`。
+## 發佈網站
 
-所有平台都必須使用 HTTPS，瀏覽器才會允許網站使用麥克風。iPhone/iPad 上若瀏覽器不提供網站語音辨識，可以點選輸入框，再使用 iOS 鍵盤上的麥克風。
+最簡單的方法是前往 <https://app.netlify.com/drop>，將整個 `family-message-board` 資料夾拖進頁面。發佈完成後會取得 HTTPS 網址。若修改過本機的 `supabase-setup.sql` 加入真實密碼，請先把該檔案移出資料夾再上傳。
 
-## 本機預覽
+也可使用 GitHub Pages、Vercel 或 Cloudflare Pages。網站不需建置指令。
 
-在資料夾內執行：
+## 使用方式
 
-```powershell
-python -m http.server 8000
-```
-
-再開啟 <http://localhost:8000>。
+每位家人用相同家庭密碼進入，姓名可各自填「爸爸」、「媽媽」等。網站每 10 秒自動同步，也會在新增或刪除後立即更新。
