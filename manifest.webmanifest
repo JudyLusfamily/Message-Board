@@ -1,0 +1,14 @@
+{
+  "name": "咱兜的留言簿",
+  "short_name": "咱兜留言簿",
+  "description": "給爸爸媽媽使用的簡單語音留言簿",
+  "lang": "zh-TW",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f0df",
+  "theme_color": "#623d27",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
